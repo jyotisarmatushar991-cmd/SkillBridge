@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillBridge By Team Nirmaan</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .loader-fade-out { opacity: 0; pointer-events: none; transition: opacity 0.6s ease-out; }
+        .greeting-avatar { filter: drop-shadow(0px 10px 15px rgba(59, 130, 246, 0.4)); }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col font-sans">
+
+    <!-- 1. INITIAL APP LOADER SCREEN -->
+    <div id="initial-loader" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-between p-8 transition-opacity duration-700">
+        <div class="flex-1 flex flex-col items-center justify-center">
+            <!-- Custom Brand SVG Logo -->
+            <div class="relative flex items-center justify-center w-28 h-28 mb-6">
+                <div class="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-wider text-white">SKILLBRIDGE</h1>
+            <p class="text-blue-400 text-sm mt-1 animate-pulse">Connecting Talent & Industry...</p>
+        </div>
+        <div class="text-center pb-4">
+            <span class="text-xs tracking-widest text-gray-400 uppercase font-semibold">SkillBridge By Team Nirmaan</span>
+        </div>
+    </div>
+
+    <!-- 2. LOGIN MODAL -->
+    <div id="loginModal" class="fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 w-full max-w-md rounded-2xl shadow-2xl p-6">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white mb-3">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Portal Login</h2>
+                <p class="text-xs text-blue-500 font-semibold uppercase mt-1">SkillBridge By Team Nirmaan</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="user@domain.com" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Role</label>
+                    <select id="loginRole" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="student">Student</option>
+                        <option value="office_staff">Office Staff</option>
+                        <option value="industry">Industry Personnel</option>
+                        <option value="moderator">Moderator</option>
+                    </select>
+                </div>
+                
+                <div id="loginError" class="hidden text-xs text-red-500 font-medium text-center bg-red-500/10 py-2 rounded-lg border border-red-500/20"></div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition shadow-lg text-sm">
+                    Log In
+                </button>
+            </form>
+
+            <!-- Quick Demo Credentials helper -->
+            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700/60">
+                <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Demo Accounts & Passwords:</p>
+                <div class="grid grid-cols-2 gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <div class="cursor-pointer hover:text-blue-400" onclick="fillDemo('aditi.student@skillbridge.dev', 'student123', 'student')">🎓 Student: student123</div>
+                    <div class="cursor-pointer hover:text-blue-400" onclick="fillDemo('ramesh.staff@skillbridge.dev', 'staff123', 'office_staff')">💼 Staff: staff123</div>
+                    <div class="cursor-pointer hover:text-blue-400" onclick="fillDemo('priya.industry@skillbridge.dev', 'industry123', 'industry')">🏢 Industry: industry123</div>
+                    <div class="cursor-pointer hover:text-blue-400" onclick="fillDemo('admin.moderator@skillbridge.dev', 'moderator123', 'moderator')">🛡️ Moderator: moderator123</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. USER GREETING OVERLAY SCREEN WITH AVATAR -->
+    <div id="user-greeting-overlay" class="hidden fixed inset-0 z-50 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-6">
+        <div class="relative mb-6">
+            <div class="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 p-1 shadow-2xl">
+                <svg class="w-full h-full text-white bg-gray-900 rounded-full p-2 greeting-avatar" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z"/>
+                </svg>
+            </div>
+            <div class="absolute bottom-2 right-2 bg-green-500 w-6 h-6 rounded-full border-2 border-gray-900 flex items-center justify-center">
+                <i class="fas fa-check text-xs text-white"></i>
+            </div>
+        </div>
+        <h2 id="greeting-title" class="text-3xl font-bold text-white mb-2">Welcome Back!</h2>
+        <p id="greeting-subtitle" class="text-blue-400 font-medium text-lg mb-6">Authenticating User...</p>
+        <div class="w-48 bg-gray-800 h-2 rounded-full overflow-hidden">
+            <div class="bg-blue-500 h-full animate-pulse w-full"></div>
+        </div>
+    </div>
+
+    <!-- 4. HEADER -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-800 shadow-sm px-4 lg:px-8 py-3 transition-colors">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none tracking-tight text-gray-900 dark:text-white">SkillBridge</h1>
+                    <span class="text-[10px] uppercase tracking-wider text-blue-500 font-semibold block mt-0.5">By Team Nirmaan</span>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-md">
+                <div class="relative">
+                    <input type="text" id="searchInput" oninput="filterNotices()" placeholder="Search notices, recruiters, internships..." 
+                        class="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 text-sm rounded-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 transition-all">
+                    <i class="fas fa-search absolute left-3.5 top-2.5 text-gray-400 text-sm"></i>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center space-x-3">
+                <button id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Background Theme" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-yellow-500 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                    <i class="fas fa-sun text-lg" id="themeIcon"></i>
+                </button>
+
+                <div id="userInfoHeader" class="hidden flex items-center space-x-2 border-l border-gray-200 dark:border-gray-700 pl-3">
+                    <span id="headerUserName" class="text-xs font-semibold text-gray-700 dark:text-gray-300">User</span>
+                    <button onclick="logout()" class="text-xs text-red-500 hover:text-red-600 font-medium bg-red-500/10 px-2.5 py-1 rounded-lg">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 5. MAIN CONTENT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column -->
+        <section class="space-y-6">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold text-xl border border-blue-500/30">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div>
+                        <h3 id="currentUserName" class="font-semibold text-lg text-gray-900 dark:text-white">Guest User</h3>
+                        <span id="currentUserRoleBadge" class="inline-block bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs px-2.5 py-0.5 rounded-full font-medium border border-blue-500/30">Please Login</span>
+                    </div>
+                </div>
+                <hr class="my-4 border-gray-200 dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Welcome to SkillBridge by Team Nirmaan portal. Post opportunities, explore internships, and receive real-time updates.
+                </p>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2 flex items-center space-x-2">
+                    <i class="fas fa-bullhorn text-blue-500"></i>
+                    <span>Publisher Actions</span>
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Post real-time job listings, research opportunities, or notices.</p>
+                <button onclick="openNoticeModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 text-sm">
+                    <i class="fas fa-plus"></i>
+                    <span>Create Announcement / Notice</span>
+                </button>
+            </div>
+
+            <!-- Moderator Panel -->
+            <div id="moderatorPanel" class="hidden bg-red-500/10 border border-red-500/30 p-6 rounded-2xl">
+                <h3 class="font-bold text-red-500 text-base mb-2 flex items-center space-x-2">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Moderator Control Center</span>
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">You have full authority to delete portal users.</p>
+                <div id="usersList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+        </section>
+
+        <!-- Right Column: Real-time Notice Board -->
+        <section class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <i class="fas fa-clipboard-list text-blue-500"></i>
+                    <span>Real-Time Notice Board</span>
+                </h2>
+                <span class="flex items-center space-x-1.5 text-xs text-green-500 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/30">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
+                    <span>Live Updates Active</span>
+                </span>
+            </div>
+
+            <div id="noticesContainer" class="space-y-4"></div>
+        </section>
+    </main>
+
+    <!-- 6. NOTICE MODAL -->
+    <div id="noticeModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Post Opportunity / Notice</h3>
+                <button onclick="closeNoticeModal()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="noticeForm" onsubmit="submitNotice(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Title</label>
+                    <input type="text" id="noticeTitle" required placeholder="e.g. Research Internship Program 2026" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">Details & Information</label>
+                    <textarea id="noticeContent" rows="4" required placeholder="Provide details about requirements, deadline, and application links..." class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeNoticeModal()" class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl">Publish Real-Time</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. FOOTER -->
+    <footer class="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 mt-auto text-gray-500 dark:text-gray-400 text-sm transition-colors">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex space-x-6 text-xs font-medium">
+                <a href="#" class="hover:text-blue-500 transition">Privacy Policy</a>
+                <a href="#" class="hover:text-blue-500 transition">Terms of Service</a>
+                <a href="#" class="hover:text-blue-500 transition">Contact Support</a>
+            </div>
+            <div class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                @Team Nirmaan 2026
+            </div>
+        </div>
+    </footer>
+
+    <!-- JS SCRIPT -->
+    <script>
+        let allNotices = [];
+        let currentUser = null;
+        let socket;
+        let authToken = null;
+
+        function saveSession(token) {
+            try { sessionStorage.setItem('sb_token', token); } catch (e) {}
+        }
+        function clearSession() {
+            try { sessionStorage.removeItem('sb_token'); } catch (e) {}
+        }
+        function handleExpired() {
+            alert('Your session has expired. Please log in again.');
+            logout();
+        }
+
+        // Restore login after a page refresh
+        async function restoreSession() {
+            let token = null;
+            try { token = sessionStorage.getItem('sb_token'); } catch (e) {}
+            if (!token) return;
+            try {
+                const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+                if (!res.ok) { clearSession(); return; }
+                const data = await res.json();
+                authToken = token;
+                currentUser = data.user;
+                document.getElementById('loginModal').classList.add('hidden');
+                updateDashboardForUser(currentUser);
+            } catch (e) { /* server down: stay on login screen */ }
+        }
+
+        function authHeaders() {
+            return authToken
+                ? { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` }
+                : { 'Content-Type': 'application/json' };
+        }
+
+        function esc(v) {
+            return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('initial-loader');
+                loader.classList.add('loader-fade-out');
+                setTimeout(() => loader.style.display = 'none', 700);
+            }, 1000);
+
+            connectSocket();
+            restoreSession();
+        });
+
+        // Toggle Theme
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            const isDark = html.classList.toggle('dark');
+            
+            if (isDark) {
+                icon.classList.remove('fa-moon', 'text-gray-700');
+                icon.classList.add('fa-sun', 'text-yellow-400');
+            } else {
+                icon.classList.remove('fa-sun', 'text-yellow-400');
+                icon.classList.add('fa-moon', 'text-gray-700');
+            }
+        }
+
+        function fillDemo(email, pass, role) {
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginPassword').value = pass;
+            if (role) document.getElementById('loginRole').value = role;
+        }
+
+        function normalizeRole(role) {
+            if (!role) return 'Student';
+            const map = {
+                student: 'Student',
+                office_staff: 'Office Staff',
+                industry: 'Industry Personnel',
+                moderator: 'Moderator'
+            };
+            return map[role] || role;
+        }
+
+        // Handle User Login with Password Verification
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = document.getElementById('loginRole').value;
+            const errDiv = document.getElementById('loginError');
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, role })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errDiv.innerText = data.error || 'Login failed';
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
+
+                errDiv.classList.add('hidden');
+                document.getElementById('loginModal').classList.add('hidden');
+                currentUser = data.user;
+                authToken = data.token;
+                saveSession(authToken);
+
+                // Show Avatar greeting before dashboard enters
+                showGreetingOverlay(currentUser);
+
+            } catch (err) {
+                errDiv.innerText = "Connection error. Is the server running?";
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        function showGreetingOverlay(user) {
+            const overlay = document.getElementById('user-greeting-overlay');
+            const title = document.getElementById('greeting-title');
+            const subtitle = document.getElementById('greeting-subtitle');
+
+            title.innerText = `Welcome Back, ${user.name}!`;
+            subtitle.innerText = `Role: ${normalizeRole(user.role)} • Setting up your dashboard...`;
+            overlay.classList.remove('hidden');
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                updateDashboardForUser(user);
+            }, 1500);
+        }
+
+        function updateDashboardForUser(user) {
+            const roleLabel = normalizeRole(user.role);
+            document.getElementById('currentUserName').innerText = user.name;
+            document.getElementById('currentUserRoleBadge').innerText = roleLabel;
+            document.getElementById('headerUserName').innerText = `${user.name} (${roleLabel})`;
+            document.getElementById('userInfoHeader').classList.remove('hidden');
+
+            const modPanel = document.getElementById('moderatorPanel');
+            if (user.role === 'moderator') {
+                modPanel.classList.remove('hidden');
+                fetchUsers();
+            } else {
+                modPanel.classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            authToken = null;
+            clearSession();
+            document.getElementById('userInfoHeader').classList.add('hidden');
+            document.getElementById('currentUserName').innerText = 'Guest User';
+            document.getElementById('currentUserRoleBadge').innerText = 'Please Login';
+            document.getElementById('moderatorPanel').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        // Real-time feed (Socket.IO reconnects automatically)
+        function connectSocket() {
+            if (typeof io === 'undefined') { console.error('socket.io client not loaded'); return; }
+            socket = io();
+            socket.on('NOTICES_UPDATE', (notices) => {
+                allNotices = notices;
+                filterNotices();
+            });
+        }
+
+        function renderNotices(notices) {
+            const container = document.getElementById('noticesContainer');
+            if (!notices || notices.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-gray-500 bg-white dark:bg-gray-800/40 rounded-2xl border border-gray-200 dark:border-gray-700">No notices posted yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = notices.map(n => `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md hover:border-blue-500/50 transition duration-200">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-xs px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">${esc(normalizeRole(n.role))}</span>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mt-2">${esc(n.title)}</h3>
+                        </div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-1">
+                            <i class="far fa-clock"></i>
+                            <span>${esc(n.timestamp)}</span>
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-700 dark:text-gray-300 mt-3 leading-relaxed">${esc(n.content)}</p>
+                    <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700/60 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        <span>Posted by: <strong class="text-gray-800 dark:text-gray-200">${esc(n.author)}</strong></span>
+                        <button class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Apply / Read Article &rarr;</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterNotices() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allNotices.filter(n => 
+                n.title.toLowerCase().includes(query) || 
+                n.content.toLowerCase().includes(query) || 
+                n.author.toLowerCase().includes(query)
+            );
+            renderNotices(filtered);
+        }
+
+        function openNoticeModal() { 
+            if (!currentUser) {
+                alert("Please log in first!");
+                document.getElementById('loginModal').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('noticeModal').classList.remove('hidden'); 
+        }
+        function closeNoticeModal() { document.getElementById('noticeModal').classList.add('hidden'); }
+
+        async function submitNotice(event) {
+            event.preventDefault();
+            const title = document.getElementById('noticeTitle').value;
+            const content = document.getElementById('noticeContent').value;
+
+            const res = await fetch('/api/notices', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ title, content })
+            });
+            if (res.status === 401) { closeNoticeModal(); return handleExpired(); }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                alert(data.error || 'Could not publish notice');
+                return;
+            }
+            document.getElementById('noticeForm').reset();
+            closeNoticeModal();
+        }
+
+        async function fetchUsers() {
+            const res = await fetch('/api/users', { headers: authHeaders() });
+            if (res.status === 401) return handleExpired();
+            if (!res.ok) return;
+            renderUsersList(await res.json());
+        }
+
+        function renderUsersList(users) {
+            const container = document.getElementById('usersList');
+            container.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between bg-white dark:bg-gray-900 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
+                    <div>
+                        <span class="font-bold text-gray-900 dark:text-white block">${esc(u.name)}</span>
+                        <span class="text-gray-500 dark:text-gray-400">${esc(normalizeRole(u.role))} (${esc(u.email)})</span>
+                    </div>
+                    <button onclick="deleteUser('${u.id}')" class="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-500/10 rounded-lg">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Delete this user?')) return;
+            const res = await fetch(`/api/users/${id}`, { method: 'DELETE', headers: authHeaders() });
+            if (res.status === 401) return handleExpired();
+            const data = await res.json();
+            if (!res.ok) { alert(data.error || 'Delete failed'); return; }
+            renderUsersList(data.users);
+        }
+    </script>
+</body>
+</html>
