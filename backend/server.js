@@ -3,6 +3,8 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 require("dotenv").config();
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
 
 
 // ======================================================
@@ -101,8 +103,8 @@ io.on("connection", (socket) => {
 //
 // For example:
 //
-// app.use("/api/auth", authRoutes);
-// app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 // app.use("/api/notices", noticeRoutes);
 
 
@@ -167,7 +169,7 @@ app.use((err, req, res, next) => {
 // Vercel handles the server when deployed.
 // Locally, Node must start listening on a port.
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 if (require.main === module) {
   server.listen(PORT, () => {
